@@ -42,6 +42,30 @@ public class CreateTest extends AbstractTest {
     }
 
     @Test
+    public void testCreate2HostsCsv() throws ForemanApiException {
+        String url = getUrl();
+        waitUntilForemanReady(url);
+
+        File createJson = getResourceAsFile("create.csv");
+        List<String> files = new ArrayList<String>();
+        files.add(createJson.getAbsolutePath());
+
+        CreateFromFile creator = new CreateFromFile(files);
+        creator.server = url;
+        creator.user = user;
+        creator.password = password;
+        creator.setCsv(true);
+        creator.run();
+
+        Host checkHost = api.getHost("host1.example.com");
+        assertNotNull(checkHost);
+        assertNotNull(checkHost.parameters);
+        Parameter parameter = checkHost.getParameterValue("JENKINS_LABEL");
+        assertNotNull(parameter);
+        assertEquals("Should be SCOTT TOM", "host1", parameter.getValue());
+    }
+
+    @Test
     public void testCreateWithTokens() throws ForemanApiException {
         String url = getUrl();
         waitUntilForemanReady(url);
@@ -67,6 +91,40 @@ public class CreateTest extends AbstractTest {
         assertEquals("Should be /tmp/scott", "/tmp/scott", parameter.getValue());
 
         checkHost = api.getHost("scott2.localdomain");
+        assertNotNull(checkHost);
+        assertNotNull(checkHost.parameters);
+        parameter = checkHost.getParameterValue("JENKINS_SLAVE_REMOTE_FSROOT");
+        assertNotNull(parameter);
+        assertEquals("Should be /tmp/scott2", "/tmp/scott2", parameter.getValue());
+    }
+
+    @Test
+    public void testCreateWithTokensCsv() throws ForemanApiException {
+        String url = getUrl();
+        waitUntilForemanReady(url);
+
+        File createJson = getResourceAsFile("create-with-tokens.csv");
+        List<String> files = new ArrayList<String>();
+        files.add(createJson.getAbsolutePath());
+
+        File props = getResourceAsFile("tokens1.properties");
+
+        CreateFromFile creator = new CreateFromFile(files);
+        creator.server = url;
+        creator.user = user;
+        creator.password = password;
+        creator.properties = props.getAbsolutePath();
+        creator.setCsv(true);
+        creator.run();
+
+        Host checkHost = api.getHost("host1.example.com");
+        assertNotNull(checkHost);
+        assertNotNull(checkHost.parameters);
+        Parameter parameter = checkHost.getParameterValue("JENKINS_SLAVE_REMOTE_FSROOT");
+        assertNotNull(parameter);
+        assertEquals("Should be /tmp/scott1", "/tmp/scott1", parameter.getValue());
+
+        checkHost = api.getHost("host2.example.com");
         assertNotNull(checkHost);
         assertNotNull(checkHost.parameters);
         parameter = checkHost.getParameterValue("JENKINS_SLAVE_REMOTE_FSROOT");
@@ -151,6 +209,25 @@ public class CreateTest extends AbstractTest {
     }
 
     @Test
+    public void testCreateDuplicateNamesCsv() throws ForemanApiException {
+        String url = getUrl();
+        waitUntilForemanReady(url);
+
+        File createJson = getResourceAsFile("create-same-name.csv");
+        List<String> files = new ArrayList<String>();
+        files.add(createJson.getAbsolutePath());
+
+        CreateFromFile creator = new CreateFromFile(files);
+        creator.server = url;
+        creator.user = user;
+        creator.password = password;
+        creator.setCsv(true);
+        exception.expect(RuntimeException.class);
+        exception.expectMessage("Host host1.example.com already exists");
+        creator.run();
+    }
+
+    @Test
     public void testCreateMissingInfo() throws ForemanApiException {
         String url = getUrl();
         waitUntilForemanReady(url);
@@ -165,6 +242,23 @@ public class CreateTest extends AbstractTest {
         creator.password = password;
         exception.expect(RuntimeException.class);
         creator.run();
+    }
 
+    @Test
+    public void testCreateMissingInfoCsv() throws ForemanApiException {
+        String url = getUrl();
+        waitUntilForemanReady(url);
+
+        File createJson = getResourceAsFile("create-missing-name.csv");
+        ArrayList<String> files = new ArrayList<String>();
+        files.add(createJson.getAbsolutePath());
+
+        CreateFromFile creator = new CreateFromFile(files);
+        creator.server = url;
+        creator.user = user;
+        creator.password = password;
+        creator.setCsv(true);
+        exception.expect(RuntimeException.class);
+        creator.run();
     }
 }

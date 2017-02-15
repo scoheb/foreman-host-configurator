@@ -49,7 +49,41 @@ public class UpdateTest extends AbstractTest {
         Parameter parameter = checkHost.getParameterValue("JENKINS_LABEL");
         assertNotNull(parameter);
         assertEquals("Should be SCOTT2 TOM2", "SCOTT2 TOM2", parameter.getValue());
+    }
 
+    @Test
+    public void testUpdateHostsCsv() throws ForemanApiException {
+        String url = getUrl();
+        waitUntilForemanReady(url);
+
+        File createJson = getResourceAsFile("create.csv");
+        List<String> files = new ArrayList<String>();
+        files.add(createJson.getAbsolutePath());
+
+        CreateFromFile creator = new CreateFromFile(files);
+        creator.server = url;
+        creator.user = user;
+        creator.password = password;
+        creator.setCsv(true);
+        creator.run();
+
+        createJson = getResourceAsFile("create-parameters-updated.csv");
+        files = new ArrayList<String>();
+        files.add(createJson.getAbsolutePath());
+
+        UpdateFromFile updater = new UpdateFromFile(files);
+        updater.server = url;
+        updater.user = user;
+        updater.password = password;
+        updater.setCsv(true);
+        updater.run();
+
+        Host checkHost = api.getHost("host1.example.com");
+        assertNotNull(checkHost);
+        assertNotNull(checkHost.parameters);
+        Parameter parameter = checkHost.getParameterValue("JENKINS_LABEL");
+        assertNotNull(parameter);
+        assertEquals("Should be host3", "host3", parameter.getValue());
     }
 
     @Test
@@ -111,4 +145,3 @@ public class UpdateTest extends AbstractTest {
         assertEquals("Should be 'ABC'", "ABC", parameter.getValue());
     }
 }
-

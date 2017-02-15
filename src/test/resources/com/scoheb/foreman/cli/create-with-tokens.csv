@@ -1,0 +1,2 @@
+host1.example.com;host1;${FSROOT}1
+host2.example.com;host2;${FSROOT}2
