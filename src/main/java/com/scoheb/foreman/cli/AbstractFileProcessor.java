@@ -7,6 +7,8 @@ import com.scoheb.foreman.cli.model.Host;
 import com.scoheb.foreman.cli.model.HostTypeAdapter;
 import com.scoheb.foreman.cli.model.Hosts;
 import com.scoheb.foreman.cli.model.Parameter;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.text.StrSubstitutor;
 import org.apache.log4j.Logger;
@@ -14,6 +16,8 @@ import org.apache.log4j.Logger;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
@@ -29,6 +33,12 @@ public abstract class AbstractFileProcessor extends Command {
     @com.beust.jcommander.Parameter(names = "--properties",
             description = "Properties file whose key/value pairs can be used as tokens")
     protected String properties;
+
+    @com.beust.jcommander.Parameter(names = "--csv",
+            description = "Process file as a CSV with ';' delimiter")
+    protected boolean csv;
+
+    public void setCsv(boolean csv) { this.csv = csv; }
 
     private static Logger LOGGER = Logger.getLogger(AbstractFileProcessor.class);
     private final Properties props = new Properties();
@@ -80,12 +90,30 @@ public abstract class AbstractFileProcessor extends Command {
             } catch (IOException e) {
                 throw new RuntimeException("Exception while trying to read File " + f.getAbsolutePath() + " - " + e.getMessage());
             }
-            final GsonBuilder gsonBuilder = new GsonBuilder();
-            gsonBuilder.registerTypeAdapter(Host.class, new HostTypeAdapter());
-            gsonBuilder.setPrettyPrinting();
 
-            final Gson gson = gsonBuilder.create();
-            final Hosts hosts = gson.fromJson(json, Hosts.class);
+            Hosts hosts = new Hosts();
+            if (csv) {
+                try {
+                    for (CSVRecord record :
+                            CSVFormat.DEFAULT.withDelimiter(';').withAllowMissingColumnNames(true).parse(new StringReader(json))) {
+                        Host host = new Host();
+                        host.setName(record.get(0));
+                        host.addParameter(new Parameter(HostTypeAdapter.parameterMapping.get("labels"), record.get(1)));
+                        host.addParameter(new Parameter(HostTypeAdapter.parameterMapping.get("remoteFs"), record.get(2)));
+                        hosts.getHosts().add(host);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    throw new RuntimeException("Exception while trying to parse '" + json + "' - " + e.getMessage());
+                }
+            } else {
+                final GsonBuilder gsonBuilder = new GsonBuilder();
+                gsonBuilder.registerTypeAdapter(Host.class, new HostTypeAdapter());
+                gsonBuilder.setPrettyPrinting();
+
+                final Gson gson = gsonBuilder.create();
+                hosts = gson.fromJson(json, Hosts.class);
+            }
             if (hosts == null || hosts.getHosts() == null || hosts.getHosts().size() == 0) {
                 throw new RuntimeException("No Hosts loaded from " + f.getAbsolutePath());
             }
