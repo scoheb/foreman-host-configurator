@@ -75,7 +75,7 @@ public class MainTest {
         exit.expectSystemExitWithStatus(1);
         exit.checkAssertionAfterwards(new Assertion() {
             public void checkAssertion() {
-                assertTrue(systemOutRule.getLog().indexOf("java.net.ConnectException: Connection refused (Connection refused)") >= 0);
+                assertTrue(systemOutRule.getLog().indexOf("java.net.ConnectException: Connection refused") >= 0);
             }
         });
         Main.main(new String[] {"list", "--server=http://127.0.0.1:9999",
@@ -87,7 +87,7 @@ public class MainTest {
         exit.expectSystemExitWithStatus(1);
         exit.checkAssertionAfterwards(new Assertion() {
             public void checkAssertion() {
-                assertTrue(systemOutRule.getLog().indexOf("java.net.ConnectException: Connection refused (Connection refused)") >= 0);
+                assertTrue(systemOutRule.getLog().indexOf("java.net.ConnectException: Connection refused") >= 0);
                 assertTrue(systemOutRule.getLog().indexOf("Debug logging enabled.") >= 0);
             }
         });
