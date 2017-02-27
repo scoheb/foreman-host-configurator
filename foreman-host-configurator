@@ -22,5 +22,5 @@ if [ ! -e "${SCRIPT_DIR}/target/foreman-host-configurator.jar" ] ; then
     fi
 fi
 
-$JAVACMD -jar "${SCRIPT_DIR}/target/foreman-host-configurator.jar" "$*"
+$JAVACMD -jar "${SCRIPT_DIR}/target/foreman-host-configurator.jar" "$@" 
 exit $?
